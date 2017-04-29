@@ -14,7 +14,7 @@ setup(
     setup_requires=['pytest-runner>=2.0,<3dev'],
     tests_require=[
         'pytest>=3.0.6', 'pytz==2016.10', 'pytest-capturelog>=0.7',
-        'freezegun>=0.3.8'
+        'freezegun>=0.3.8', 'six',
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
