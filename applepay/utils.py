@@ -5,18 +5,20 @@ more documentation and guidelines on the steps taken here.
 
 #ApplePaySpec: https://developer.apple.com/library/content/documentation/PassKit/Reference/PaymentTokenJSON/PaymentTokenJSON.html#//apple_ref/doc/uid/TP40014929-CH8-SW2
 """
+from __future__ import absolute_import
 import base64
 import binascii
 from datetime import timedelta, datetime
 from functools import partial
 from six.moves import filter
-import six
 import hashlib
 import logging
+
 from asn1crypto import cms, parser
 from ecdsa import VerifyingKey, BadSignatureError, curves, util
 from pytz import utc
 from OpenSSL import crypto
+
 from . import payment
 
 
@@ -279,7 +281,7 @@ def get_first_from_iterable(filter_func, iterable):
             if no items matching the filter are found
     """
     filtered = filter(filter_func, iterable)
-    return six.next(filtered, None)
+    return next(filtered, None)
 
 
 def get_hashfunc_by_name(name, data):

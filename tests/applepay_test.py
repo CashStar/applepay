@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import base64
 import binascii
 import copy
@@ -15,6 +16,7 @@ from pytz import utc
 from applepay import payment, utils as applepay_utils
 
 import utils as test_utils
+from six.moves import range
 
 
 @pytest.fixture(scope='session')
@@ -234,7 +236,7 @@ def test_valid_signing_time_data_is_logged(caplog):
 
     # Then a new debug log is captured
     # filter on DEBUG log records only
-    records = list(filter(lambda log_record: log_record.levelno == logging.DEBUG, caplog.records()))
+    records = [log_record for log_record in caplog.records() if log_record.levelno == logging.DEBUG]
     assert len(records) == 1
     assert records[0].name == 'applepay.utils'
     assert records[0].message == 'Signing time is valid. Signing time: 2014-10-27 20:51:43 UTC, Current time: 2014-10-27 20:56:43 UTC, Threshold: 1:00:00.'
@@ -255,7 +257,7 @@ def test_invalid_signing_time_data_is_logged(caplog):
 
     # Then a new debug log is captured
     # filter on DEBUG log records only
-    records = list(filter(lambda log_record: log_record.levelno == logging.DEBUG, caplog.records()))
+    records = [log_record for log_record in caplog.records() if log_record.levelno == logging.DEBUG]
     assert len(records) == 1
     assert records[0].name == 'applepay.utils'
     assert records[0].message == 'Signing time is invalid. Signing time: 2014-10-27 20:51:43 UTC, Current time: 2014-10-28 01:51:43 UTC, Threshold: 1:00:00.'
@@ -414,8 +416,8 @@ def test_get_payment_data():
         "data": base64.b64encode(b'sir robin;'),
         "signature": "does not matter",
         "header": {
-            "transactionId": binascii.hexlify('sir lancelot;'.encode('utf8')),
-            "ephemeralPublicKey": base64.b64encode('king arthur;'.encode('utf8')),
+            "transactionId": binascii.hexlify(b'sir lancelot;'),
+            "ephemeralPublicKey": base64.b64encode(b'king arthur;'),
             "publicKeyHash": "does not matter"
         }
     }
@@ -435,10 +437,10 @@ def test_get_payment_data_includes_application_data():
         "data": base64.b64encode(b'sir robin;'),
         "signature": "does not matter",
         "header": {
-            "transactionId": binascii.hexlify('sir lancelot;'.encode('utf8')),
-            "ephemeralPublicKey": base64.b64encode('king arthur;'.encode('utf8')),
+            "transactionId": binascii.hexlify(b'sir lancelot;'),
+            "ephemeralPublicKey": base64.b64encode(b'king arthur;'),
             "publicKeyHash": "does not matter",
-            "applicationData": binascii.hexlify('sir galahad;'.encode('utf8'))
+            "applicationData": binascii.hexlify(b'sir galahad;')
         }
     }
 
