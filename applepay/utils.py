@@ -5,11 +5,12 @@ more documentation and guidelines on the steps taken here.
 
 #ApplePaySpec: https://developer.apple.com/library/content/documentation/PassKit/Reference/PaymentTokenJSON/PaymentTokenJSON.html#//apple_ref/doc/uid/TP40014929-CH8-SW2
 """
+from __future__ import absolute_import
 import base64
 import binascii
 from datetime import timedelta, datetime
 from functools import partial
-from itertools import ifilter
+from six.moves import filter
 import hashlib
 import logging
 
@@ -18,7 +19,7 @@ from ecdsa import VerifyingKey, BadSignatureError, curves, util
 from pytz import utc
 from OpenSSL import crypto
 
-import payment
+from . import payment
 
 
 logger = logging.getLogger(__name__)
@@ -262,7 +263,7 @@ def remove_ec_point_prefix(point):
         str: The EC point byte string minus the uncompressed
             byte prefix indicator
     """
-    if not point.startswith("\x04"):
+    if not point.startswith(b"\x04"):
         logger.warning("Expected uncompressed EC point.")
         return None
 
@@ -279,7 +280,7 @@ def get_first_from_iterable(filter_func, iterable):
         object: the first filtered item from iterable or None
             if no items matching the filter are found
     """
-    filtered = ifilter(filter_func, iterable)
+    filtered = filter(filter_func, iterable)
     return next(filtered, None)
 
 
@@ -376,7 +377,7 @@ def verify_signature(token, threshold=None):
         logger.warning("Intermediate certificate OID not found")
         return False
 
-    root_der = open(payment.ROOT_CA_FILE, 'r').read()
+    root_der = open(payment.ROOT_CA_FILE, 'rb').read()
     # Pass the der-encoded representation of the certs.
     if not valid_chain_of_trust(root_der, intermediate_cert.dump(), leaf_cert.dump()):
         return False

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import base64
 import binascii
 import copy
@@ -15,6 +16,7 @@ from pytz import utc
 from applepay import payment, utils as applepay_utils
 
 import utils as test_utils
+from six.moves import range
 
 
 @pytest.fixture(scope='session')
@@ -24,7 +26,7 @@ def token_fixture():
 
 @pytest.fixture(scope='session')
 def root_der_fixture():
-    with open(payment.ROOT_CA_FILE, 'r') as root_ca:
+    with open(payment.ROOT_CA_FILE, 'rb') as root_ca:
         return root_ca.read()
 
 
@@ -234,7 +236,7 @@ def test_valid_signing_time_data_is_logged(caplog):
 
     # Then a new debug log is captured
     # filter on DEBUG log records only
-    records = filter(lambda log_record: log_record.levelno == logging.DEBUG, caplog.records())
+    records = [log_record for log_record in caplog.records() if log_record.levelno == logging.DEBUG]
     assert len(records) == 1
     assert records[0].name == 'applepay.utils'
     assert records[0].message == 'Signing time is valid. Signing time: 2014-10-27 20:51:43 UTC, Current time: 2014-10-27 20:56:43 UTC, Threshold: 1:00:00.'
@@ -255,7 +257,7 @@ def test_invalid_signing_time_data_is_logged(caplog):
 
     # Then a new debug log is captured
     # filter on DEBUG log records only
-    records = filter(lambda log_record: log_record.levelno == logging.DEBUG, caplog.records())
+    records = [log_record for log_record in caplog.records() if log_record.levelno == logging.DEBUG]
     assert len(records) == 1
     assert records[0].name == 'applepay.utils'
     assert records[0].message == 'Signing time is invalid. Signing time: 2014-10-27 20:51:43 UTC, Current time: 2014-10-28 01:51:43 UTC, Threshold: 1:00:00.'
@@ -294,7 +296,7 @@ def test_invalid_leaf_cert(certificates_der_fixture):
     root_der, intermediate_der, leaf_der = certificates_der_fixture
 
     # Given: the leaf cert is not valid
-    leaf_der = leaf_der.replace("\x86H", "\x86G")  # some arbitrary change
+    leaf_der = leaf_der.replace(b"\x86H", b"\x86G")  # some arbitrary change
 
     # When: we test for a valid chain of trust
     is_valid = applepay_utils.valid_chain_of_trust(root_der, intermediate_der, leaf_der)
@@ -308,7 +310,7 @@ def test_invalid_intermediate_cert(certificates_der_fixture):
     root_der, intermediate_der, leaf_der = certificates_der_fixture
 
     # Given: the intermediate cert is not valid
-    intermediate_der = intermediate_der.replace("\x86H", "\x86G")  # some arbitrary change
+    intermediate_der = intermediate_der.replace(b"\x86H", b"\x86G")  # some arbitrary change
 
     # When: we test for a valid chain of trust
     is_valid = applepay_utils.valid_chain_of_trust(root_der, intermediate_der, leaf_der)
@@ -411,11 +413,11 @@ def test_get_payment_data():
     # Given an apple pay token  with minimal data
     token = {
         "version": "does not matter",
-        "data": base64.b64encode('sir robin;'),
+        "data": base64.b64encode(b'sir robin;'),
         "signature": "does not matter",
         "header": {
-            "transactionId": binascii.hexlify('sir lancelot;'),
-            "ephemeralPublicKey": base64.b64encode('king arthur;'),
+            "transactionId": binascii.hexlify(b'sir lancelot;'),
+            "ephemeralPublicKey": base64.b64encode(b'king arthur;'),
             "publicKeyHash": "does not matter"
         }
     }
@@ -424,7 +426,7 @@ def test_get_payment_data():
     payment_data = applepay_utils.get_payment_data(token)
 
     # Then it is the expected value
-    expected_payment_data = 'king arthur;sir robin;sir lancelot;'
+    expected_payment_data = b'king arthur;sir robin;sir lancelot;'
     assert expected_payment_data == payment_data
 
 
@@ -432,13 +434,13 @@ def test_get_payment_data_includes_application_data():
     # Given an apple pay token including application data
     token = {
         "version": "does not matter",
-        "data": base64.b64encode('sir robin;'),
+        "data": base64.b64encode(b'sir robin;'),
         "signature": "does not matter",
         "header": {
-            "transactionId": binascii.hexlify('sir lancelot;'),
-            "ephemeralPublicKey": base64.b64encode('king arthur;'),
+            "transactionId": binascii.hexlify(b'sir lancelot;'),
+            "ephemeralPublicKey": base64.b64encode(b'king arthur;'),
             "publicKeyHash": "does not matter",
-            "applicationData": binascii.hexlify('sir galahad;')
+            "applicationData": binascii.hexlify(b'sir galahad;')
         }
     }
 
@@ -446,7 +448,7 @@ def test_get_payment_data_includes_application_data():
     payment_data = applepay_utils.get_payment_data(token)
 
     # Then it is the expected value
-    expected_payment_data = 'king arthur;sir robin;sir lancelot;sir galahad;'
+    expected_payment_data = b'king arthur;sir robin;sir lancelot;sir galahad;'
     assert expected_payment_data == payment_data
 
 
@@ -458,25 +460,25 @@ def test_get_ber_encoded_signed_attributes(signed_attributes_fixture):
     signed_attrs_ber = applepay_utils.get_ber_encoded_signed_attributes(signed_attributes_fixture)
 
     # Then the result is the expected value
-    expected_ber_attributes = '1i0\x18\x06\t*\x86H\x86\xf7\r\x01\t\x031\x0b\x06\t*\x86H\x86\xf7\r\x01\x07\x010\x1c\x06\t*\x86H\x86\xf7\r\x01\t\x051\x0f\x17\r141027195143Z0/\x06\t*\x86H\x86\xf7\r\x01\t\x041"\x04 {M_{\x87\xb5\xfb\n\x11\x9d\xa5w\xa3\xc6\xd9/\xbb\xe6L\xb1\x03\xb2v_M\n\xbe\x0f\xb1\x98\x8er'
+    expected_ber_attributes = b'1i0\x18\x06\t*\x86H\x86\xf7\r\x01\t\x031\x0b\x06\t*\x86H\x86\xf7\r\x01\x07\x010\x1c\x06\t*\x86H\x86\xf7\r\x01\t\x051\x0f\x17\r141027195143Z0/\x06\t*\x86H\x86\xf7\r\x01\t\x041"\x04 {M_{\x87\xb5\xfb\n\x11\x9d\xa5w\xa3\xc6\xd9/\xbb\xe6L\xb1\x03\xb2v_M\n\xbe\x0f\xb1\x98\x8er'
     assert expected_ber_attributes == signed_attrs_ber
 
 
 def test_remove_ec_point_prefix(certificates_fixture):
     # Given a string that stars with the EC point uncompressed prefix
-    point = '\x04\xc2\x15w\xed'
+    point = b'\x04\xc2\x15w\xed'
 
     # When we remove the ec point prefix from the point string
     public_key_point = applepay_utils.remove_ec_point_prefix(point)
 
     # Then the returned bytes are the remaining bytes minus the prefix
     assert len(public_key_point) == 4
-    assert not public_key_point.startswith("\x04")
+    assert not public_key_point.startswith(b"\x04")
 
 
 def test_remove_ec_point_prefix_finds_unexpected_format(certificates_fixture):
     # Given a point that is not in the uncompressed format
-    point = '\xc2\x15w\xed\xeb\xd6\xc7\xb2!\x8fh\xddp\x90\xa1!\x8d\xc7\xb0\xbdo,(=\x84`\x95\xd9J\xf4\xa5A\x1b\x83B\x0e\xd8\x11\xf3@~\x833\x1f\x1cT\xc3\xf7\xeb2 \xd6\xba\xd5\xd4\xef\xf4\x92\x89\x89>|\x0f\x13'
+    point = b'\xc2\x15w\xed\xeb\xd6\xc7\xb2!\x8fh\xddp\x90\xa1!\x8d\xc7\xb0\xbdo,(=\x84`\x95\xd9J\xf4\xa5A\x1b\x83B\x0e\xd8\x11\xf3@~\x833\x1f\x1cT\xc3\xf7\xeb2 \xd6\xba\xd5\xd4\xef\xf4\x92\x89\x89>|\x0f\x13'
 
     # When we remove the ec point prefix from the point string
     public_key_bytes = applepay_utils.remove_ec_point_prefix(point)
@@ -535,7 +537,7 @@ def test_get_hashfunc_by_name():
     name = 'sha256'
 
     # Given some data to hash
-    data = 'sir robin'
+    data = b'sir robin'
 
     # When a hashfunc is created by that name
     hashfunc = applepay_utils.get_hashfunc_by_name(name, data)
@@ -589,7 +591,7 @@ def test_mismatched_payment_data(signed_attributes_fixture):
     signed_attrs = signed_attributes_fixture
 
     # Given a payment data object that will not match
-    hashed_payment_data = hashlib.sha256('sir robin').digest()
+    hashed_payment_data = hashlib.sha256(b'sir robin').digest()
 
     # When the message digest is validated
     is_valid = applepay_utils.validate_message_digest(signed_attrs, hashed_payment_data)
