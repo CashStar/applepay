@@ -11,7 +11,7 @@ setup(
     keywords="applepay payment tokens",
     url="https://github.com/halturin/applepay",
     packages=['applepay', 'tests'],
-    install_requires=[],
+    install_requires=[],  # Please do not depend on setup.py to install other dependencies for you, that is why we have requirements.txt
     setup_requires=['pytest-runner>=2.0,<3dev'],
     tests_require=[
         'pytest>=3.0.6', 'pytz==2016.10', 'pytest-capturelog>=0.7',
